@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrollyPro - Dynamic Live Tracking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        #map { height: 450px; width: 100%; border-radius: 0 0 1rem 1rem; }
+        /* Routing panel ko hide karne ke liye */
+        .leaflet-routing-container { display: none; }
+    </style>
+</head>
+<body class="pb-10">
+
+    <nav class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-[1000]">
+        <h1 class="text-xl font-bold text-indigo-600">TrollyPro Live</h1>
+        <div class="text-sm font-medium bg-green-100 text-green-700 px-3 py-1 rounded-full animate-pulse">● Live System</div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto mt-6 px-4">
+        
+        <div class="bg-white p-6 rounded-t-xl shadow-md border-b">
+            <h2 class="text-lg font-bold mb-4 text-gray-800">Set Your Route</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input id="startNode" type="text" placeholder="Pickup (e.g. Karachi)" class="border p-2 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                <input id="endNode" type="text" placeholder="Dropoff (e.g. Lahore)" class="border p-2 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                <button onclick="startTracking()" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition">
+                    Start Tracking
+                </button>
+            </div>
+        </div>
+
+        <div id="map" class="shadow-xl"></div>
+
+        <div class="grid grid-cols-2 gap-4 mt-6">
+            <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-indigo-500">
+                <p class="text-xs text-gray-500 uppercase font-bold">Distance Remaining</p>
+                <p id="dist-val" class="text-xl font-black text-gray-800">-- km</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-green-500">
+                <p class="text-xs text-gray-500 uppercase font-bold">Estimated Time</p>
+                <p id="time-val" class="text-xl font-black text-gray-800">-- mins</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var map = L.map('map').setView([30.3753, 69.3451], 5); // Pakistan Center
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        var truckMarker, routeControl;
+
+        // Truck Icon Setup
+        var truckIcon = L.divIcon({
+            html: '<i class="fas fa-truck-moving text-3xl text-indigo-600 drop-shadow-md"></i>',
+            className: 'custom-truck',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        });
+
+        async function startTracking() {
+            const startCity = document.getElementById('startNode').value;
+            const endCity = document.getElementById('endNode').value;
+
+            if(!startCity || !endCity) return alert("Please enter both locations!");
+
+            // 1. Convert city names to Coordinates (Geocoding)
+            const getCoords = async (city) => {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${city},Pakistan`);
+                const data = await res.json();
+                return data[0] ? [data[0].lat, data[0].lon] : null;
+            };
+
+            const startCoords = await getCoords(startCity);
+            const endCoords = await getCoords(endCity);
+
+            if(!startCoords || !endCoords) return alert("Location not found in Pakistan!");
+
+            // 2. Clear old route/marker
+            if(routeControl) map.removeControl(routeControl);
+            if(truckMarker) map.removeLayer(truckMarker);
+
+            // 3. Create Route
+            routeControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(startCoords[0], startCoords[1]),
+                    L.latLng(endCoords[0], endCoords[1])
+                ],
+                lineOptions: { styles: [{ color: '#4f46e5', weight: 6 }] },
+                createMarker: function() { return null; } // Default markers hide karein
+            }).addTo(map);
+
+            // 4. Simulate Movement
+            routeControl.on('routesfound', function(e) {
+                var routes = e.routes[0];
+                var coordinates = routes.coordinates;
+                var totalDist = (routes.summary.totalDistance / 1000).toFixed(1);
+                var totalTime = Math.round(routes.summary.totalTime / 60);
+
+                document.getElementById('dist-val').innerText = totalDist + " km";
+                document.getElementById('time-val').innerText = totalTime + " mins";
+
+                truckMarker = L.marker([coordinates[0].lat, coordinates[0].lng], {icon: truckIcon}).addTo(map);
+                
+                let i = 0;
+                let moveInterval = setInterval(() => {
+                    if (i >= coordinates.length) {
+                        clearInterval(moveInterval);
+                        alert("Truck has reached the destination!");
+                        return;
+                    }
+                    truckMarker.setLatLng([coordinates[i].lat, coordinates[i].lng]);
+                    
+                    // Center map on truck occasionally
+                    if(i % 20 === 0) map.panTo([coordinates[i].lat, coordinates[i].lng]);
+                    
+                    i += 5; // Speed adjustment
+                }, 100);
+            });
+        }
+    </script>
+</body>
+</html>

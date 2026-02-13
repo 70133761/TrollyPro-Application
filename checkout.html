@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Checkout - TrollyPro Live</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; }
+        .checkout-container { max-width: 450px; margin: 20px auto; background: white; border-radius: 30px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .blue-header { background: #2563eb; color: white; padding: 40px 30px; border-radius: 0 0 30px 30px; }
+        .payment-option { border: 2px solid #e5e7eb; transition: all 0.2s; cursor: pointer; }
+        .payment-option.active { border-color: #2563eb; background-color: #eff6ff; }
+        .mode-card { border: 2px solid #e5e7eb; border-radius: 20px; padding: 15px; cursor: pointer; position: relative; }
+        .mode-card.active { border-color: #2563eb; background-color: #f8fafc; }
+        .check-icon { display: none; color: #2563eb; position: absolute; right: 20px; top: 25px; }
+        .mode-card.active .check-icon { display: block; }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="checkout-container">
+        <div class="blue-header relative">
+            <span class="bg-blue-400 bg-opacity-30 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Secure Checkout</span>
+            <i class="fa-solid fa-shield-halved absolute right-8 top-10 opacity-80"></i>
+            <h1 class="text-3xl font-black mt-4">Finalize Booking</h1>
+            <p id="liveVehicle" class="text-xs font-bold opacity-80 mt-1 uppercase tracking-tighter italic">VEHICLE: --</p>
+        </div>
+
+        <div class="p-6">
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100">
+                    <p class="text-[10px] font-black text-blue-600 uppercase mb-1">Advance (30%)</p>
+                    <p id="advanceDisplay" class="text-2xl font-black text-blue-900 tracking-tighter">Rs. --</p>
+                </div>
+                <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    <p class="text-[10px] font-black text-gray-500 uppercase mb-1">Remaining (70%)</p>
+                    <p id="remainingDisplay" class="text-2xl font-black text-gray-800 tracking-tighter">Rs. --</p>
+                </div>
+            </div>
+
+            <div class="mb-8">
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Pay Advance Via</p>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="payment-option p-4 rounded-2xl text-center active" onclick="selectPayment(this)">
+                        <i class="fa-solid fa-mobile-screen text-emerald-500 text-xl mb-2"></i>
+                        <p class="text-[9px] font-black">EASYPAISA</p>
+                    </div>
+                    <div class="payment-option p-4 rounded-2xl text-center" onclick="selectPayment(this)">
+                        <i class="fa-solid fa-wallet text-red-500 text-xl mb-2"></i>
+                        <p class="text-[9px] font-black">JAZZCASH</p>
+                    </div>
+                    <div class="payment-option p-4 rounded-2xl text-center" onclick="selectPayment(this)">
+                        <i class="fa-solid fa-building-columns text-blue-700 text-xl mb-2"></i>
+                        <p class="text-[9px] font-black">BANK</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-8">
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Remaining Payment Mode</p>
+                <div class="space-y-3">
+                    <div class="mode-card active flex items-center gap-4" onclick="selectMode(this)">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center font-black text-orange-600">Rs</div>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-gray-800">Cash on Delivery</p>
+                            <p class="text-[10px] text-gray-400">Pay remaining to driver at drop-off</p>
+                        </div>
+                        <i class="fa-solid fa-circle-check check-icon"></i>
+                    </div>
+                    <div class="mode-card flex items-center gap-4" onclick="selectMode(this)">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-gray-800">Pay Full Amount Now</p>
+                            <p class="text-[10px] text-gray-400">No cash needed at destination</p>
+                        </div>
+                        <i class="fa-solid fa-circle-check check-icon"></i>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="processFinalBooking()" class="w-full bg-slate-900 text-white font-black py-5 rounded-2xl shadow-2xl active:scale-95 transition-all text-lg">
+                Confirm Booking
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const rawData = localStorage.getItem('final_booking');
+            if (rawData) {
+                const booking = JSON.parse(rawData);
+                document.getElementById('liveVehicle').innerText = "VEHICLE: " + booking.vehicle;
+                let totalAmount = parseInt(booking.fare.replace(/[^0-9]/g, ''));
+                if (!isNaN(totalAmount)) {
+                    let advance = Math.round(totalAmount * 0.3);
+                    let remaining = totalAmount - advance;
+                    document.getElementById('advanceDisplay').innerText = "Rs. " + advance.toLocaleString();
+                    document.getElementById('remainingDisplay').innerText = "Rs. " + remaining.toLocaleString();
+                }
+            } else {
+                window.location.href = 'vehicle_selection.html';
+            }
+        };
+
+        function selectPayment(el) {
+            document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function selectMode(el) {
+            document.querySelectorAll('.mode-card').forEach(opt => opt.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        // Updated Function: No alert, direct redirect to Driver Selection
+        function processFinalBooking() {
+            const currentData = JSON.parse(localStorage.getItem('final_booking'));
+            if (!currentData) return;
+
+            // Payment mode fetch aur save karein
+            const activeModeEl = document.querySelector('.mode-card.active p.font-bold');
+            const finalMode = activeModeEl ? activeModeEl.innerText : "Cash on Delivery";
+            
+            currentData.paymentMode = finalMode;
+            localStorage.setItem('final_booking', JSON.stringify(currentData));
+
+            // Agle page par bhej dena
+            window.location.href = 'driver_selection.html'; 
+        }
+    </script>
+</body>
+</html>

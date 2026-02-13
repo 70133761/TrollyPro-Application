@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrollyPro - Live Estimation & Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <style>
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+        #map { height: 350px; width: 100%; border-radius: 15px; border: 2px solid white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 10; }
+        .glass-card { background: white; border-radius: 20px; border: 1px solid #e2e8f0; }
+        .vehicle-card { transition: all 0.3s ease; border: 2px solid #f1f5f9; cursor: pointer; opacity: 0.5; pointer-events: none; }
+        .enabled-vehicle { opacity: 1; pointer-events: auto; }
+        .active-vehicle { border-color: #fbbf24 !important; background-color: #fffbeb !important; transform: translateY(-5px); }
+        .leaflet-routing-container { display: none; }
+    </style>
+</head>
+<body class="pb-10">
+
+    <nav class="bg-white p-4 flex justify-between items-center shadow-sm sticky top-0 z-50">
+        <button onclick="window.history.back()" class="text-slate-500 font-bold flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <h1 class="text-indigo-700 text-2xl font-black italic">TrollyPro</h1>
+        <div class="w-10"></div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 mt-4">
+        <h2 class="text-center text-xl font-extrabold text-slate-800 mb-4">Real-Time Route & Fare Estimation 🚛</h2>
+
+        <div class="overflow-hidden mb-6">
+            <div id="map"></div>
+        </div>
+
+        <div class="glass-card p-6 mb-8">
+            <div class="flex items-center gap-2 text-indigo-700 font-bold mb-6 border-b pb-3">
+                <i class="fa-solid fa-truck-loading"></i> Journey Details
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="space-y-3">
+                    <p class="font-black text-slate-700 flex items-center gap-2"><i class="fa-solid fa-box text-amber-600"></i> Total Weight of Items</p>
+                    <div class="relative border-2 border-dashed border-slate-300 p-4 rounded-xl">
+                        <input type="number" id="weightInput" oninput="calculateRealTime()" placeholder="weightInput" 
+                            class="w-full bg-slate-50 p-3 rounded-lg outline-none font-bold text-slate-700 border border-slate-200">
+                        <span class="absolute right-8 top-7 font-black text-slate-400">KG</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">PICKUP</p>
+                            <p id="pickupLoc" class="font-bold text-slate-800 text-sm">Loading...</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] font-black text-red-500 uppercase tracking-widest">DROP-OFF</p>
+                            <p id="dropLoc" class="font-bold text-slate-800 text-sm">Loading...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 rounded-2xl p-4 flex justify-between items-center text-center">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">DISTANCE</p>
+                            <p id="liveDist" class="text-xl font-black text-blue-600">-- km</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">EST. TIME</p>
+                            <p id="liveTime" class="text-xl font-black text-blue-600">-- mins</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div id="v_rickshaw" onclick="selectV(this, 'rickshaw')" class="vehicle-card glass-card p-4 text-center">
+                <i class="fa-solid fa-taxi text-yellow-500 text-3xl mb-3"></i>
+                <p class="font-bold text-xs text-slate-800">Rickshaw</p>
+                <p class="bg-amber-100 text-amber-700 text-[10px] font-bold py-1 px-3 rounded-full inline-block my-2" id="p_rickshaw">Rs. --</p>
+                <p class="text-[9px] text-slate-400 font-medium uppercase" id="t_rickshaw">Est: --</p>
+            </div>
+            <div id="v_pickup" onclick="selectV(this, 'pickup')" class="vehicle-card glass-card p-4 text-center">
+                <i class="fa-solid fa-truck-pickup text-emerald-500 text-3xl mb-3"></i>
+                <p class="font-bold text-xs text-slate-800">Mini Pickup</p>
+                <p class="bg-amber-100 text-amber-700 text-[10px] font-bold py-1 px-3 rounded-full inline-block my-2" id="p_pickup">Rs. --</p>
+                <p class="text-[9px] text-slate-400 font-medium uppercase" id="t_pickup">Est: --</p>
+            </div>
+            <div id="v_truck" onclick="selectV(this, 'truck')" class="vehicle-card glass-card p-4 text-center">
+                <i class="fa-solid fa-truck text-blue-500 text-3xl mb-3"></i>
+                <p class="font-bold text-xs text-slate-800">1-Ton Truck</p>
+                <p class="bg-amber-100 text-amber-700 text-[10px] font-bold py-1 px-3 rounded-full inline-block my-2" id="p_truck">Rs. --</p>
+                <p class="text-[9px] text-slate-400 font-medium uppercase" id="t_truck">Est: --</p>
+            </div>
+            <div id="v_large" onclick="selectV(this, 'large')" class="vehicle-card glass-card p-4 text-center">
+                <i class="fa-solid fa-truck-moving text-red-500 text-3xl mb-3"></i>
+                <p class="font-bold text-xs text-slate-800">Large Truck</p>
+                <p class="bg-amber-100 text-amber-700 text-[10px] font-bold py-1 px-3 rounded-full inline-block my-2" id="p_large">Rs. --</p>
+                <p class="text-[9px] text-slate-400 font-medium uppercase" id="t_large">Est: --</p>
+            </div>
+            <div id="v_container" onclick="selectV(this, 'container')" class="vehicle-card glass-card p-4 text-center">
+                <i class="fa-solid fa-box text-slate-600 text-3xl mb-3"></i>
+                <p class="font-bold text-xs text-slate-800">Container</p>
+                <p class="bg-amber-100 text-amber-700 text-[10px] font-bold py-1 px-3 rounded-full inline-block my-2" id="p_container">Rs. --</p>
+                <p class="text-[9px] text-slate-400 font-medium uppercase" id="t_container">Est: --</p>
+            </div>
+        </div>
+
+        <button id="bookBtn" disabled onclick="finalConfirmation()" class="w-full bg-slate-300 text-white font-black py-5 rounded-2xl mt-8 shadow-lg text-xl cursor-not-allowed transition-all">
+            Confirm & Book Now
+        </button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+    <script>
+        let realDist = 0;
+        let realTime = 0;
+        const config = {
+            rickshaw: { base: 200, km: 35, maxW: 250, return: 0.3 },
+            pickup: { base: 600, km: 60, maxW: 800, return: 0.4 },
+            truck: { base: 1500, km: 120, maxW: 2500, return: 0.5 },
+            large: { base: 3000, km: 180, maxW: 5000, return: 0.5 },
+            container: { base: 8000, km: 250, maxW: 15000, return: 0.6 }
+        };
+
+        var map = L.map('map').setView([31.5204, 74.3587], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        async function init() {
+            const p = localStorage.getItem('temp_pickup') || "DHA Lahore";
+            const d = localStorage.getItem('temp_dropoff') || "Wagha Border";
+            document.getElementById('pickupLoc').innerText = p;
+            document.getElementById('dropLoc').innerText = d;
+
+            const resP = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${p}`);
+            const dataP = await resP.json();
+            const resD = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${d}`);
+            const dataD = await resD.json();
+
+            if(dataP[0] && dataD[0]) {
+                L.Routing.control({
+                    waypoints: [L.latLng(dataP[0].lat, dataP[0].lon), L.latLng(dataD[0].lat, dataD[0].lon)],
+                    lineOptions: { styles: [{ color: '#4f46e5', weight: 6 }] },
+                    createMarker: () => null
+                }).on('routesfound', function(e) {
+                    const r = e.routes[0];
+                    realDist = (r.summary.totalDistance / 1000).toFixed(1);
+                    realTime = Math.round(r.summary.totalTime / 60);
+                    document.getElementById('liveDist').innerText = realDist + " km";
+                    document.getElementById('liveTime').innerText = realTime + " mins";
+                    calculateRealTime();
+                }).addTo(map);
+            }
+        }
+
+        function calculateRealTime() {
+            const weight = parseFloat(document.getElementById('weightInput').value) || 0;
+            for (let key in config) {
+                const v = config[key];
+                const card = document.getElementById('v_' + key);
+                if (weight > 0 && weight <= v.maxW && realDist > 0) {
+                    card.classList.add('enabled-vehicle');
+                    let price = Math.round((v.base + (realDist * v.km)) * (1 + v.return));
+                    document.getElementById('p_' + key).innerText = "Rs. " + price.toLocaleString();
+                    document.getElementById('t_' + key).innerText = "Est: " + (realTime + 5) + "m";
+                } else {
+                    card.classList.remove('enabled-vehicle', 'active-vehicle');
+                    document.getElementById('p_' + key).innerText = "Rs. --";
+                }
+            }
+        }
+
+        function selectV(el, type) {
+            document.querySelectorAll('.vehicle-card').forEach(c => c.classList.remove('active-vehicle'));
+            el.classList.add('active-vehicle');
+            const btn = document.getElementById('bookBtn');
+            btn.disabled = false;
+            btn.classList.replace('bg-slate-300', 'bg-indigo-600');
+            btn.classList.remove('cursor-not-allowed');
+        }
+
+        function finalConfirmation() {
+            const selected = document.querySelector('.active-vehicle');
+            const bookingData = {
+                pickup: document.getElementById('pickupLoc').innerText,
+                dropoff: document.getElementById('dropLoc').innerText,
+                distance: document.getElementById('liveDist').innerText,
+                vehicle: selected.querySelector('p.font-bold').innerText,
+                fare: selected.querySelector('p.bg-amber-100').innerText,
+                weight: document.getElementById('weightInput').value + " KG"
+            };
+            localStorage.setItem('final_booking', JSON.stringify(bookingData));
+            window.location.href = 'checkout.html';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

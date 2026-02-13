@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Your Driver - TrollyPro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .driver-card { transition: all 0.3s; border: 2px solid transparent; cursor: pointer; }
+        .driver-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .active-driver { border-color: #2563eb !important; background-color: #eff6ff !important; }
+        .profile-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; }
+    </style>
+</head>
+<body class="pb-20">
+
+    <nav class="bg-white p-5 flex items-center shadow-sm sticky top-0 z-50">
+        <button onclick="window.history.back()" class="text-slate-600 mr-4"><i class="fa-solid fa-arrow-left"></i></button>
+        <h1 class="text-xl font-black text-slate-800">Available Drivers</h1>
+    </nav>
+
+    <div class="max-w-md mx-auto px-4 mt-6">
+        <div class="bg-indigo-600 p-4 rounded-2xl mb-6 text-white">
+            <p class="text-[10px] font-bold opacity-80 uppercase">Route Summary</p>
+            <p id="routeText" class="text-sm font-medium">Loading route...</p>
+        </div>
+
+        <p class="text-xs font-bold text-slate-400 uppercase mb-4 tracking-widest">Select a driver to proceed</p>
+
+        <div id="driverList" class="space-y-4">
+            </div>
+
+        <button onclick="confirmDriver()" id="confirmBtn" disabled class="fixed bottom-6 left-4 right-4 max-w-md mx-auto bg-slate-300 text-white font-black py-5 rounded-2xl shadow-xl transition-all text-lg cursor-not-allowed">
+            Select Driver & Book
+        </button>
+    </div>
+
+    <script>
+        const drivers = [
+            { id: 1, name: "Muhammad Ahmed", rating: 4.8, trips: 1240, img: "https://randomuser.me/api/portraits/men/32.jpg", baseAdd: 0 },
+            { id: 2, name: "Sajid Khan", rating: 4.9, trips: 850, img: "https://randomuser.me/api/portraits/men/45.jpg", baseAdd: 150 },
+            { id: 3, name: "Ali Raza", rating: 4.6, trips: 2100, img: "https://randomuser.me/api/portraits/men/22.jpg", baseAdd: -100 }
+        ];
+
+        window.onload = function() {
+            const data = JSON.parse(localStorage.getItem('final_booking'));
+            if (!data) {
+                window.location.href = 'vehicle_selection.html';
+                return;
+            }
+
+            document.getElementById('routeText').innerText = `${data.pickup} to ${data.dropoff}`;
+            
+            // Fare nikalna (Location ke mutabiq jo pichle page par tha)
+            let totalFare = parseInt(data.fare.replace(/[^0-9]/g, ''));
+            const list = document.getElementById('driverList');
+
+            drivers.forEach(driver => {
+                const driverFare = totalFare + driver.baseAdd;
+                list.innerHTML += `
+                    <div class="driver-card bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4" onclick="selectDriver(this, '${driver.name}', ${driverFare})">
+                        <img src="${driver.img}" class="profile-img">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-slate-800">${driver.name}</h3>
+                            <div class="flex items-center gap-2 text-[10px] font-bold">
+                                <span class="text-amber-500"><i class="fa-solid fa-star"></i> ${driver.rating}</span>
+                                <span class="text-slate-400">|</span>
+                                <span class="text-slate-500 uppercase">${driver.trips} Trips</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-black text-indigo-700">Rs. ${driverFare.toLocaleString()}</p>
+                            <p class="text-[9px] text-slate-400 font-bold uppercase">Total Fare</p>
+                        </div>
+                    </div>
+                `;
+            });
+        };
+
+        let selectedDriverData = null;
+
+        function selectDriver(el, name, fare) {
+            document.querySelectorAll('.driver-card').forEach(card => card.classList.remove('active-driver'));
+            el.classList.add('active-driver');
+            
+            selectedDriverData = { name, fare };
+            
+            const btn = document.getElementById('confirmBtn');
+            btn.disabled = false;
+            btn.classList.replace('bg-slate-300', 'bg-indigo-600');
+            btn.classList.remove('cursor-not-allowed');
+        }
+
+        function confirmDriver() {
+            const data = JSON.parse(localStorage.getItem('final_booking'));
+            data.driverName = selectedDriverData.name;
+            data.finalFareWithDriver = selectedDriverData.fare;
+            localStorage.setItem('final_booking', JSON.stringify(data));
+
+            alert(`Booking Confirmed with ${selectedDriverData.name}!`);
+            window.location.href = 'booking_success.html';
+        }
+    </script>
+</body>
+</html>

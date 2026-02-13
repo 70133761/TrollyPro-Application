@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrollyPro - Set Your Route</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f7ff; font-family: 'Inter', sans-serif; }
+        
+        /* Image jaisa clean input style */
+        .route-input {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease-in-out;
+            border-radius: 12px;
+        }
+        .route-input:focus {
+            border-color: #5b50e6;
+            box-shadow: 0 0 0 4px rgba(91, 80, 230, 0.05);
+            outline: none;
+        }
+
+        /* Date picker ko clean karne ke liye */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.6;
+        }
+
+        .main-card {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.03), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white w-full max-w-[500px] p-8 md:p-12 rounded-[30px] main-card border border-slate-50">
+        
+        <div class="flex flex-col items-center mb-8">
+            <div class="mb-4">
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 18L15 12L9 6" stroke="#5b50e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="10" stroke="#5b50e6" stroke-width="2" stroke-dasharray="4 4"/>
+                    <path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22" stroke="#5b50e6" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <h1 class="text-3xl font-black text-slate-900 tracking-tight">Set Your Route 📍</h1>
+            <p class="text-slate-400 text-sm mt-2 font-medium">Enter the full pickup and drop-off addresses.</p>
+        </div>
+
+        <form onsubmit="handleRouteSubmit(event)" class="space-y-6" autocomplete="off">
+            
+            <div class="relative">
+                <div class="flex items-center gap-2 mb-2 ml-1">
+                    <i class="fa-solid fa-location-dot text-emerald-500 text-sm"></i>
+                    <label class="text-slate-500 text-xs font-bold uppercase tracking-wider">Full Pickup Address (Origin)</label>
+                </div>
+                <input type="text" id="pickup" placeholder="e.g. DHA phase 2" required
+                    class="route-input w-full py-4 px-5 text-slate-700 font-medium">
+            </div>
+
+            <div class="flex justify-center -my-3">
+                <div class="text-indigo-600 bg-indigo-50 w-8 h-8 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-arrow-down text-sm"></i>
+                </div>
+            </div>
+
+            <div class="relative">
+                <div class="flex items-center gap-2 mb-2 ml-1">
+                    <i class="fa-solid fa-paper-plane text-red-500 text-sm"></i>
+                    <label class="text-slate-500 text-xs font-bold uppercase tracking-wider">Full Drop-off Address (Destination)</label>
+                </div>
+                <input type="text" id="dropoff" placeholder="e.g. wagha border" required
+                    class="route-input w-full py-4 px-5 text-slate-700 font-medium">
+            </div>
+
+            <div class="relative">
+                <div class="flex items-center gap-2 mb-2 ml-1">
+                    <i class="fa-solid fa-calendar-days text-slate-600 text-sm"></i>
+                    <label class="text-slate-500 text-xs font-bold uppercase tracking-wider">Date of Move</label>
+                </div>
+                <input type="date" id="moveDate" required
+                    class="route-input w-full py-4 px-5 text-slate-700 font-medium cursor-pointer">
+            </div>
+
+            <button type="submit" class="w-full bg-[#5b50e6] hover:bg-[#4a41c4] text-white font-bold py-5 rounded-2xl shadow-xl shadow-indigo-100 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 text-lg mt-4">
+                <i class="fa-solid fa-truck-ramp-box"></i>
+                Check Route & Select Vehicle
+            </button>
+        </form>
+
+        <button onclick="window.history.back()" class="w-full mt-6 text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-slate-600 transition-colors">
+            <i class="fa-solid fa-chevron-left mr-1"></i> Back to Dashboard
+        </button>
+    </div>
+
+    <script>
+        // Smooth transition and storage
+        function handleRouteSubmit(event) {
+            event.preventDefault();
+            
+            const pickup = document.getElementById('pickup').value;
+            const dropoff = document.getElementById('dropoff').value;
+            const date = document.getElementById('moveDate').value;
+
+            // Simple check
+            if(!pickup || !dropoff || !date) {
+                alert("Please fill all details correctly.");
+                return;
+            }
+
+            // Storing data to use on next page
+            localStorage.setItem('temp_pickup', pickup);
+            localStorage.setItem('temp_dropoff', dropoff);
+            localStorage.setItem('temp_date', date);
+
+            // Redirecting to vehicle selection
+            window.location.href = 'vehicle_selection.html';
+        }
+
+        // Set minimum date to today (user purani date select na kar sakay)
+        window.onload = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('moveDate').setAttribute('min', today);
+        };
+    </script>
+</body>
+</html>

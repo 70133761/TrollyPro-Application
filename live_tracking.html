@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Tracking - TrollyPro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; }
+        .map-bg { background: #e2e8f0 url('https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/74.3587,31.5204,12,0/400x400?access_token=YOUR_MAPBOX_TOKEN_HERE'); background-size: cover; background-position: center; }
+        .pulse-marker { animation: pulse-green 2s infinite; }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <div class="absolute top-0 left-0 right-0 p-6 z-50 pointer-events-none">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <button onclick="window.history.back()" class="w-12 h-12 bg-white rounded-2xl shadow-xl flex items-center justify-center text-slate-800 pointer-events-auto active:scale-90 transition-all">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="bg-white px-4 py-2 rounded-2xl shadow-xl pointer-events-auto">
+                <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest"><i class="fa-solid fa-circle text-[6px] mr-1 mb-[2px]"></i> Live Tracking</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 map-bg relative">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-2xl pulse-marker">
+                <i class="fa-solid fa-truck"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-t-[40px] p-8 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] relative z-50">
+        <div class="max-w-md mx-auto">
+            <div class="flex items-center gap-4 mb-6">
+                <img id="trackDriverImg" src="https://randomuser.me/api/portraits/men/32.jpg" class="w-14 h-14 rounded-2xl object-cover">
+                <div class="flex-1">
+                    <h3 id="trackDriverName" class="font-black text-slate-800">Assigning Driver...</h3>
+                    <p class="text-xs text-slate-400 font-medium">On the way to your destination</p>
+                </div>
+                <div class="text-right">
+                    <p id="eta" class="text-xl font-black text-indigo-600">14 min</p>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Arrival ETA</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 h-2 rounded-full mb-8 overflow-hidden">
+                <div class="bg-emerald-500 h-full w-2/3 rounded-full"></div>
+            </div>
+
+            <div class="space-y-4 mb-8">
+                <div class="flex gap-4 items-start">
+                    <i class="fa-solid fa-location-arrow text-indigo-500 mt-1"></i>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-300 uppercase">Pickup Location</p>
+                        <p id="trackPickup" class="text-sm font-bold text-slate-700 leading-tight">--</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start">
+                    <i class="fa-solid fa-map-pin text-red-500 mt-1"></i>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-300 uppercase">Destination</p>
+                        <p id="trackDrop" class="text-sm font-bold text-slate-700 leading-tight">--</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <a id="callDriver" href="#" class="bg-slate-100 text-slate-700 py-5 rounded-2xl font-black text-center text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-phone"></i> Call Driver
+                </a>
+                <button class="bg-indigo-600 text-white py-5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-100">
+                    <i class="fa-solid fa-comment-dots"></i> Message
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const data = JSON.parse(localStorage.getItem('final_booking'));
+            
+            if (data && data.driverName) {
+                document.getElementById('trackDriverName').innerText = data.driverName;
+                document.getElementById('trackPickup').innerText = data.pickup;
+                document.getElementById('trackDrop').innerText = data.dropoff;
+                document.getElementById('callDriver').href = "tel:03001234567"; // Mock number
+
+                // Change Image based on driver name
+                if(data.driverName === "Sajid Khan") document.getElementById('trackDriverImg').src = "https://randomuser.me/api/portraits/men/45.jpg";
+                if(data.driverName === "Ali Raza") document.getElementById('trackDriverImg').src = "https://randomuser.me/api/portraits/men/22.jpg";
+            } else {
+                alert("No active delivery to track!");
+                window.location.href = 'dashboard.html';
+            }
+        };
+    </script>
+</body>
+</html>

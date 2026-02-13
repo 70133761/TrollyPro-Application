@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Orders - TrollyPro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: #cbd5e1; position: relative; z-index: 10; }
+        .timeline-dot.active { background: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2); }
+        .timeline-line { position: absolute; left: 5px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; z-index: 1; }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="max-w-md mx-auto">
+        <div class="flex items-center gap-4 mb-6">
+            <button onclick="window.history.back()" class="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-600">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h1 class="text-xl font-black text-slate-800">Active Orders</h1>
+        </div>
+
+        <div id="noOrderBox" class="hidden bg-white rounded-[30px] p-12 text-center shadow-sm border border-slate-100">
+            <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-box-open text-3xl text-slate-300"></i>
+            </div>
+            <h3 class="font-bold text-slate-800">No active bookings</h3>
+            <p class="text-xs text-slate-400 mt-2">You don't have any ongoing deliveries right now.</p>
+            <button onclick="window.location.href='index.html'" class="mt-6 bg-indigo-600 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase">Book a Truck</button>
+        </div>
+
+        <div id="activeContent" class="hidden space-y-4">
+            
+            <div class="bg-white rounded-[30px] p-6 shadow-md border border-slate-50">
+                <div class="flex justify-between items-center mb-6">
+                    <span class="bg-indigo-100 text-indigo-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">In Progress</span>
+                    <p class="text-xs font-bold text-slate-400" id="orderID">#TP-0000</p>
+                </div>
+
+                <div class="relative pl-8 space-y-8">
+                    <div class="timeline-line"></div>
+                    
+                    <div class="relative">
+                        <div class="timeline-dot active absolute -left-8 top-1"></div>
+                        <p class="text-xs font-black text-slate-800">Booking Confirmed</p>
+                        <p class="text-[10px] text-slate-400">Your request has been accepted</p>
+                    </div>
+
+                    <div class="relative">
+                        <div class="timeline-dot active absolute -left-8 top-1"></div>
+                        <p class="text-xs font-black text-slate-800">Driver Assigned</p>
+                        <p id="assignedDriver" class="text-[10px] text-slate-400">Loading driver...</p>
+                    </div>
+
+                    <div class="relative">
+                        <div class="timeline-dot absolute -left-8 top-1"></div>
+                        <p class="text-xs font-black text-slate-500">Picked Up</p>
+                        <p class="text-[10px] text-slate-400">Waiting for driver to reach pickup</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-indigo-600 rounded-[30px] p-6 text-white shadow-lg shadow-indigo-100">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <p id="vType" class="text-lg font-black leading-tight">--</p>
+                        <p class="text-[10px] opacity-70 uppercase font-bold">Vehicle Type</p>
+                    </div>
+                    <i class="fa-solid fa-truck-moving text-3xl opacity-30"></i>
+                </div>
+                <div class="pt-4 border-t border-white border-opacity-20 flex justify-between items-end">
+                    <div>
+                        <p class="text-[10px] opacity-70 uppercase font-bold">Total Fare</p>
+                        <p id="vFare" class="text-2xl font-black">Rs. --</p>
+                    </div>
+                    <button class="bg-white text-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase">View Receipt</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-[30px] p-6 shadow-sm border border-slate-50">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Route Details</p>
+                <div class="space-y-3">
+                    <div class="flex gap-3">
+                        <i class="fa-solid fa-circle-dot text-indigo-500 mt-1"></i>
+                        <p id="pLoc" class="text-xs font-bold text-slate-700">--</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <i class="fa-solid fa-location-dot text-red-500 mt-1"></i>
+                        <p id="dLoc" class="text-xs font-bold text-slate-700">--</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const data = JSON.parse(localStorage.getItem('final_booking'));
+            
+            if (data && data.driverName) {
+                document.getElementById('activeContent').classList.remove('hidden');
+                document.getElementById('noOrderBox').classList.add('hidden');
+
+                // Data mapping
+                document.getElementById('orderID').innerText = "#TP-" + Math.floor(1000 + Math.random() * 9000);
+                document.getElementById('assignedDriver').innerText = data.driverName + " is on the way";
+                document.getElementById('vType').innerText = data.vehicle;
+                document.getElementById('vFare').innerText = "Rs. " + (data.finalFareWithDriver || data.fare);
+                document.getElementById('pLoc').innerText = data.pickup;
+                document.getElementById('dLoc').innerText = data.dropoff;
+            } else {
+                document.getElementById('noOrderBox').classList.remove('hidden');
+                document.getElementById('activeContent').classList.add('hidden');
+            }
+        };
+    </script>
+</body>
+</html>

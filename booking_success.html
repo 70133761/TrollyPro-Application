@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed - TrollyPro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .success-card { max-width: 450px; margin: 20px auto; background: white; border-radius: 35px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.1); }
+        .confetti-header { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 40px 20px; text-align: center; }
+        .pulse-animation { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .driver-avatar { width: 80px; height: 80px; border-radius: 20px; object-fit: cover; }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="success-card">
+        <div class="confetti-header">
+            <div class="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4 pulse-animation">
+                <i class="fa-solid fa-check text-4xl"></i>
+            </div>
+            <h1 class="text-2xl font-black uppercase tracking-tight">Booking Confirmed!</h1>
+            <p class="text-sm opacity-90 font-medium mt-1">Order ID: #TP-<span id="orderId">8829</span></p>
+        </div>
+
+        <div class="p-6">
+            <div class="bg-slate-50 border border-slate-100 rounded-3xl p-4 flex items-center gap-4 mb-6">
+                <img id="driverImg" src="https://randomuser.me/api/portraits/men/32.jpg" class="driver-avatar shadow-sm">
+                <div class="flex-1">
+                    <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Your Assigned Driver</p>
+                    <h3 id="driverName" class="text-xl font-black text-slate-800">Loading...</h3>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-1 rounded-md"><i class="fa-solid fa-star"></i> 4.9</span>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Verified Professional</span>
+                    </div>
+                </div>
+                <a href="tel:03001234567" class="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all">
+                    <i class="fa-solid fa-phone"></i>
+                </a>
+            </div>
+
+            <div class="space-y-4 mb-8">
+                <div class="flex justify-between border-b border-slate-100 pb-3">
+                    <p class="text-xs font-bold text-slate-400 uppercase">Pickup Location</p>
+                    <p id="finalPickup" class="text-xs font-black text-slate-700 text-right">--</p>
+                </div>
+                <div class="flex justify-between border-b border-slate-100 pb-3">
+                    <p class="text-xs font-bold text-slate-400 uppercase">Drop-off Location</p>
+                    <p id="finalDrop" class="text-xs font-black text-slate-700 text-right">--</p>
+                </div>
+                <div class="flex justify-between border-b border-slate-100 pb-3">
+                    <p class="text-xs font-bold text-slate-400 uppercase">Total Distance</p>
+                    <p id="finalDist" class="text-xs font-black text-slate-700">--</p>
+                </div>
+                <div class="flex justify-between">
+                    <p class="text-xs font-bold text-slate-400 uppercase">Amount to Pay</p>
+                    <p id="finalFare" class="text-lg font-black text-indigo-700">--</p>
+                </div>
+            </div>
+
+            <div class="bg-indigo-50 rounded-3xl p-6 text-center border-2 border-indigo-100 border-dashed">
+                <div class="flex justify-center gap-4 mb-4">
+                    <i class="fa-solid fa-truck-fast text-indigo-600 text-3xl pulse-animation"></i>
+                </div>
+                <h4 class="font-black text-indigo-900">Driver is arriving at Pickup!</h4>
+                <p class="text-[10px] text-indigo-400 font-bold uppercase mt-1 tracking-widest">Est. Arrival: 12 mins</p>
+            </div>
+
+            <button onclick="window.location.href='index.html'" class="w-full mt-8 text-slate-400 font-black text-xs uppercase tracking-widest hover:text-indigo-600 transition-colors">
+                Back to Dashboard
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // LocalStorage se sara real data uthana
+            const data = JSON.parse(localStorage.getItem('final_booking'));
+            
+            if (data) {
+                // Random Order ID generate karna
+                document.getElementById('orderId').innerText = Math.floor(1000 + Math.random() * 9000);
+                
+                // Details fill karna
+                document.getElementById('driverName').innerText = data.driverName || "Assigning...";
+                document.getElementById('finalPickup').innerText = data.pickup;
+                document.getElementById('finalDrop').innerText = data.dropoff;
+                document.getElementById('finalDist').innerText = data.distance;
+                document.getElementById('finalFare').innerText = "Rs. " + (data.finalFareWithDriver || data.fare).toLocaleString();
+                
+                // Driver image update (Agar list mein se thi)
+                if(data.driverName === "Sajid Khan") document.getElementById('driverImg').src = "https://randomuser.me/api/portraits/men/45.jpg";
+                if(data.driverName === "Ali Raza") document.getElementById('driverImg').src = "https://randomuser.me/api/portraits/men/22.jpg";
+            } else {
+                window.location.href = 'index.html';
+            }
+        };
+    </script>
+</body>
+</html>
